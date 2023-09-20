@@ -2,8 +2,8 @@
 #include <thread>
 #include <conio.h>
 
-const int PADDLE1_LENGTH = 7;
-const int PADDLE2_LENGTH = 7;
+const int PADDLE1_LENGTH = 2;
+const int PADDLE2_LENGTH = 4;
 const int PADDLE1_INIT_POSITION_TOP = 1;
 const int PADDLE1_INIT_POSITION_BOTTOM = PADDLE1_INIT_POSITION_TOP + (PADDLE1_LENGTH - 1); //suma ya que la matríz del mapa es similar a un sistema coordenado rotado -45°
 const int PADDLE2_INIT_POSITION_TOP = 1;
@@ -149,13 +149,14 @@ void ballVelocityChange() {
     
     //SIN LOS 4 ELSE IF DE ABAJO EL PROGRAMA CORRE NORMALMENTE, PERO FALLA POR CONTACTO DE PELOTA CON BORDES SUPERIOR E INFERIOR DE LOS PADDLES
     //¿CUÁL ES EL ERROR EN ESOS 4 ELSE IF?
+    //programa se cierra al contacto de la pelota con bordes inferiores (y debería con los superiores) ¿?
 
     //choque con paddle1 -> solo choque por cara interior al mapa (arreglar luego)
     if((ballPos_column == 3) && map[ballPos_row][ballPos_column - 1] == ']') {
         ballVel_column = -ballVel_column;
-    } else if((ballPos_column == 2) && (map[ballPos_row + 1][ballPos_column] == ']' || map[ballPos_row - 1][ballPos_column] == ']')) {
+    } else if((ballPos_column == 2) && (map[ballPos_row + 1][2] == ']' || map[ballPos_row - 1][2] == ']')) {
         ballVel_row = -ballVel_row;
-    } else if((ballPos_column == 1) && (map[ballPos_row + 1][ballPos_column] == '[' || map[ballPos_row - 1][ballPos_column] == '[')) {
+    } else if((ballPos_column == 1) && (map[ballPos_row + 1][1] == '[' || map[ballPos_row - 1][1] == '[')) {
         ballPos_row = -ballPos_row;
     }
     //choque con paddle2 -> solo choque por cara interior al mapa (arreglar luego)
@@ -216,7 +217,7 @@ void ballPosition() {
     ballVelocityChange();
 
     //frame timer
-    std::this_thread::sleep_for(0.02s); //como le pongo el tiempo como variable
+    std::this_thread::sleep_for(0.005s); //como le pongo el tiempo como variable
 }
 
 
