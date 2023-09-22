@@ -1,3 +1,4 @@
+//FALTA RESOLVER PROBLEMA DE SINCRONICIDAD DE HILOS DE EJECUCIÓN
 #include <iostream>
 #include <thread>
 #include <conio.h>
