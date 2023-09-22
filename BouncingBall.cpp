@@ -2,8 +2,8 @@
 #include <thread>
 #include <conio.h>
 
-const int PADDLE1_LENGTH = 2;
-const int PADDLE2_LENGTH = 2;
+const int PADDLE1_LENGTH = 3;
+const int PADDLE2_LENGTH = 3;
 const int PADDLE1_INIT_POSITION_TOP = 1;
 const int PADDLE1_INIT_POSITION_BOTTOM = PADDLE1_INIT_POSITION_TOP + (PADDLE1_LENGTH - 1); //suma ya que la matríz del mapa es similar a un sistema coordenado rotado -45°
 const int PADDLE2_INIT_POSITION_TOP = 1;
@@ -13,16 +13,16 @@ int Paddle1BottomPos = PADDLE1_INIT_POSITION_BOTTOM;
 int Paddle2TopPos = PADDLE2_INIT_POSITION_TOP;
 int Paddle2BottomPos = PADDLE2_INIT_POSITION_BOTTOM;
 
-const int BALL_INIT_POSITION_ROW = 5;
-const int BALL_INIT_POSITION_COLUMN = 5;
+const int BALL_INIT_POSITION_ROW = 3;
+const int BALL_INIT_POSITION_COLUMN = 3;
 int ballPos_row = BALL_INIT_POSITION_ROW; 
 int ballPos_column = BALL_INIT_POSITION_COLUMN;
 
 int ballVel_row = 1;
 int ballVel_column = 1;    
 
-const int MAP_WIDTH = 40;
-const int MAP_HEIGHT = 20;
+const int MAP_WIDTH = 30;
+const int MAP_HEIGHT = 7;
 char map[MAP_HEIGHT][MAP_WIDTH];
 
 //i y j para renderizar mapa
@@ -139,31 +139,75 @@ void paddle2Move() {
 /*
 Cambia la velocidad de la pelota cuando se requiere
 */
-void ballVelocityChange() {
+void ballVelocityChange() { //faltaba cuando la pelota se acercaba a los paddles por las esquinas
+    //paddle1
+    //contacto con el paddle1 cara interior
+    if( (ballPos_column == 3) && (map[ballPos_row][2] == ']') ) {
+        ballVel_column = -ballVel_column;
+    }
+    if( (ballPos_column == 1) && ( (map[ballPos_row + 1][1] == '[') || (map[ballPos_row - 1][1] == '[') ) ) {
+            ballVel_row = -ballVel_row;
+    }
+    if( (ballPos_column == 2) && ( (map[ballPos_row + 1][2] == ']') || (map[ballPos_row - 1][2] == ']') ) ) {
+            ballVel_row = -ballVel_row;
+    }
+    //contacto por las esquinas de los paddles funciona salvo por caso especial
+    if( (ballVel_row < 0) && (ballVel_column < 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == 3) ) {
+        ballVel_column = -ballVel_column;
+        ballVel_row = -ballVel_row;
+    }
+    if( (ballVel_row > 0) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == 3) ) {
+        ballVel_column = -ballVel_column;
+        ballVel_row = -ballVel_row;
+    }
+    //caso especial: pelota llega a techo o piso y además se sitúa en esquina de paddel superior o inferior, respectivamente
+    if( (ballVel_row > 0) && (ballPos_row == MAP_HEIGHT - 2) && (ballVel_column < 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == 3) ) {
+        ballVel_column = -ballVel_column;
+        // ballVel_row = -ballVel_row; //no se invierte velocidad en filas ya que eso lo hará el contacto con el piso
+    }
+    if( (ballVel_row < 0) && (ballPos_row == 1) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == 3) ) {
+        ballVel_column = -ballVel_column;
+        // ballVel_row = -ballVel_row; //no se invierte velocidad en filas ya que eso lo hará el contacto con el techo 
+    }
+
+    //paddle2
+    //contacto con el paddle2 cara interior
+    if( (ballPos_column == (MAP_WIDTH - 4)) && (map[ballPos_row][MAP_WIDTH - 3] == '[') ) {
+        ballVel_column = -ballVel_column;
+    }
+    if( (ballPos_column == (MAP_WIDTH - 3)) && ( (map[ballPos_row + 1][MAP_WIDTH - 3] == '[') || (map[ballPos_row - 1][MAP_WIDTH - 3] == '[') ) ) {
+            ballVel_row = -ballVel_row;
+    }
+    if( (ballPos_column == (MAP_WIDTH - 2)) && ( (map[ballPos_row + 1][MAP_WIDTH - 2] == ']') || (map[ballPos_row - 1][MAP_WIDTH - 2] == ']') ) ) {
+            ballVel_row = -ballVel_row;
+    }
+    //contacto por las esquinas de los paddles funciona salvo por caso especial
+    if( (ballVel_row < 0) && (ballVel_column > 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == MAP_WIDTH - 4) ) {
+        ballVel_column = -ballVel_column;
+        ballVel_row = -ballVel_row;
+    }
+    if( (ballVel_row > 0) && (ballVel_column > 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == MAP_WIDTH - 4) ) {
+        ballVel_column = -ballVel_column;
+        ballVel_row = -ballVel_row;
+    }
+    //caso especial: pelota llega a techo o piso y además se sitúa en esquina de paddel superior o inferior, respectivamente
+    if( (ballVel_row > 0) && (ballPos_row == MAP_HEIGHT - 2) && (ballVel_column > 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == MAP_WIDTH - 4) ) {
+        ballVel_column = -ballVel_column;
+        // ballVel_row = -ballVel_row; //no se invierte velocidad en filas ya que eso lo hará el contacto con el piso
+    }
+    if( (ballVel_row < 0) && (ballPos_row == 1) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == MAP_WIDTH - 4) ) {
+        ballVel_column = -ballVel_column;
+        // ballVel_row = -ballVel_row; //no se invierte velocidad en filas ya que eso lo hará el contacto con el techo 
+    }
+
+    //contacto de pelota con paredes del mapa - Se calcula al final para no alterar la lógica del contacto con los paddles
     if((ballPos_column == 1) || ballPos_column == (MAP_WIDTH - 2)) {
         ballVel_column = -ballVel_column;
     }
     if((ballPos_row == 1) || ballPos_row == (MAP_HEIGHT - 2)) {
         ballVel_row = -ballVel_row;
     }
-    
-    //choque con paddle1 -> solo choque por cara interior al mapa (arreglar luego)
-    if((ballPos_column == 3) && map[ballPos_row][ballPos_column - 1] == ']') {
-        ballVel_column = -ballVel_column;
-    } else if((ballPos_column == 2) && (map[ballPos_row + 1][2] == ']' || map[ballPos_row - 1][2] == ']')) {
-        ballVel_row = -ballVel_row;
-    } else if((ballPos_column == 1) && (map[ballPos_row + 1][1] == '[' || map[ballPos_row - 1][1] == '[')) {
-        ballVel_row = -ballVel_row;
-    }
-    //choque con paddle2 -> solo choque por cara interior al mapa (arreglar luego)
-    if((ballPos_column == MAP_WIDTH - 4) && map[ballPos_row][ballPos_column + 1] == '[') {
-        ballVel_column = -ballVel_column;
-    } else if((ballPos_column == MAP_WIDTH - 3) && (map[ballPos_row + 1][ballPos_column] == '[' || map[ballPos_row - 1][ballPos_column] == '[')) {
-        ballVel_row = -ballVel_row;
-    } else if((ballPos_column == MAP_WIDTH - 2) && (map[ballPos_row + 1][ballPos_column] == ']' || map[ballPos_row - 1][ballPos_column] == ']')) {
-        ballVel_row = -ballVel_row;
-    }
-    
+
 }
 
 /*
@@ -214,7 +258,7 @@ void ballPosition() {
     ballVelocityChange(); //si cambio la velocidad aquí el programa se detiene
 
     //frame timer
-    std::this_thread::sleep_for(0.005s); //como le pongo el tiempo como variable
+    std::this_thread::sleep_for(0.05s); //como le pongo el tiempo como variable
 }
 
 
