@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 #include <conio.h>
+#include <mutex>
 
 const int PADDLE1_LENGTH = 5;
 const int PADDLE2_LENGTH = 5;
@@ -30,6 +31,8 @@ char map[MAP_HEIGHT][MAP_WIDTH];
 int i = 0;
 int j = 0;
 
+// std::mutex paddlesMutex;
+// std::mutex ballMutex;
 
 /*
 Función que controla el movimiento del paddle 1
@@ -52,6 +55,8 @@ void paddlesMove() {
 
     while(inGame) {
         moveKey = getch();
+
+        //std::lock_guard<std::mutex> lock(paddlesMutex);
 
         if(moveKey == 's') { //movimiento hacia abajo
             if(Paddle1BottomPos == MAP_HEIGHT - 2) {
@@ -208,7 +213,6 @@ void mapRender() {
 Dibuja todo el mapa dado por mapRender() y actualiza la posición de la pelota
 */
 void ballPosition() {
-
     i = 0;
     j = 0;
 
@@ -235,7 +239,7 @@ int main()
 {
     mapRender();
 
-    std::thread Paddle1Thread(paddlesMove);
+    std::thread PaddlesThread(paddlesMove);
 
     while(1) {
         ballPosition();
