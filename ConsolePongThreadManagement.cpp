@@ -2,11 +2,12 @@
 #include <iostream>
 #include <thread>
 #include <conio.h>
+#include <mutex>
 
-const int PADDLE1_LENGTH = 3;
-const int PADDLE2_LENGTH = 3;
+const int PADDLE1_LENGTH = 5;
+const int PADDLE2_LENGTH = 5;
 const int PADDLE1_INIT_POSITION_TOP = 1;
-const int PADDLE1_INIT_POSITION_BOTTOM = PADDLE1_INIT_POSITION_TOP + (PADDLE1_LENGTH - 1); //suma ya que la matríz del mapa es similar a un sistema coordenado rotado -45°
+const int PADDLE1_INIT_POSITION_BOTTOM = PADDLE1_INIT_POSITION_TOP + (PADDLE1_LENGTH - 1);
 const int PADDLE2_INIT_POSITION_TOP = 1;
 const int PADDLE2_INIT_POSITION_BOTTOM = PADDLE2_INIT_POSITION_TOP + (PADDLE2_LENGTH - 1);
 int Paddle1TopPos = PADDLE1_INIT_POSITION_TOP;
@@ -22,14 +23,17 @@ int ballPos_column = BALL_INIT_POSITION_COLUMN;
 int ballVel_row = 1;
 int ballVel_column = 1;    
 
-const int MAP_WIDTH = 30;
-const int MAP_HEIGHT = 7;
+const int MAP_WIDTH = 50;
+const int MAP_HEIGHT = 15;
 char map[MAP_HEIGHT][MAP_WIDTH];
 
 //i y j para renderizar mapa
 int i = 0;
 int j = 0;
 
+std::mutex paddle1mutx;
+std::mutex paddle2mutx;
+std::mutex ballmutx;
 
 /*
 Función que controla el movimiento del paddle 1
@@ -43,10 +47,11 @@ void paddle1Move() {
         map[i][1] = '[';
         map[i][2] = ']';
     }
-    
 
+    std::lock_guard<std::mutex> lock(paddle1mutx);
     while(inGame) {
         moveKey = getch();
+
 
         if(moveKey == 's') { //movimiento hacia abajo
             if(Paddle1BottomPos == MAP_HEIGHT - 2) {
@@ -91,15 +96,18 @@ void paddle2Move() {
     bool inGame = true;
     char moveKey;
     
-    //dibuja paddle1 en su posición inicial antes de que se introdezca algún caracter
+    //dibuja paddle2 en su posición inicial antes de que se introdezca algún caracter
     for(int i = Paddle2TopPos; i <= Paddle2BottomPos; i++) {
         map[i][MAP_WIDTH - 3] = '[';
         map[i][MAP_WIDTH - 2] = ']';
     }
     
 
+    std::lock_guard<std::mutex> lock(paddle2mutx);
     while(inGame) {
+
         moveKey = getch();
+
 
         if(moveKey == 'j') { //movimiento hacia abajo
             if(Paddle2BottomPos == MAP_HEIGHT - 2) {
@@ -163,12 +171,10 @@ void ballVelocityChange() { //faltaba cuando la pelota se acercaba a los paddles
     }
     //caso especial: pelota llega a techo o piso y además se sitúa en esquina de paddel superior o inferior, respectivamente
     if( (ballVel_row > 0) && (ballPos_row == MAP_HEIGHT - 2) && (ballVel_column < 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == 3) ) {
-        ballVel_column = -ballVel_column;
-        // ballVel_row = -ballVel_row; //no se invierte velocidad en filas ya que eso lo hará el contacto con el piso
+        ballVel_column = -ballVel_column; //no se invierte velocidad en filas ya que eso lo hará el contacto con el piso
     }
     if( (ballVel_row < 0) && (ballPos_row == 1) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == 3) ) {
-        ballVel_column = -ballVel_column;
-        // ballVel_row = -ballVel_row; //no se invierte velocidad en filas ya que eso lo hará el contacto con el techo 
+        ballVel_column = -ballVel_column; //no se invierte velocidad en filas ya que eso lo hará el contacto con el techo 
     }
 
     //paddle2
@@ -193,12 +199,10 @@ void ballVelocityChange() { //faltaba cuando la pelota se acercaba a los paddles
     }
     //caso especial: pelota llega a techo o piso y además se sitúa en esquina de paddel superior o inferior, respectivamente
     if( (ballVel_row > 0) && (ballPos_row == MAP_HEIGHT - 2) && (ballVel_column > 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == MAP_WIDTH - 4) ) {
-        ballVel_column = -ballVel_column;
-        // ballVel_row = -ballVel_row; //no se invierte velocidad en filas ya que eso lo hará el contacto con el piso
+        ballVel_column = -ballVel_column; //no se invierte velocidad en filas ya que eso lo hará el contacto con el piso
     }
     if( (ballVel_row < 0) && (ballPos_row == 1) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == MAP_WIDTH - 4) ) {
-        ballVel_column = -ballVel_column;
-        // ballVel_row = -ballVel_row; //no se invierte velocidad en filas ya que eso lo hará el contacto con el techo 
+        ballVel_column = -ballVel_column; //no se invierte velocidad en filas ya que eso lo hará el contacto con el techo 
     }
 
     //contacto de pelota con paredes del mapa - Se calcula al final para no alterar la lógica del contacto con los paddles
@@ -238,7 +242,7 @@ Dibuja todo el mapa dado por mapRender() y actualiza la posición de la pelota
 */
 void ballPosition() {
 
-    using namespace std::literals::chrono_literals;
+    std::lock_guard<std::mutex> lock(ballmutx);
 
     i = 0;
     j = 0;
@@ -252,14 +256,13 @@ void ballPosition() {
         }
     }
 
-    //ballVelocityChange(); //si cambio la velocidad aquí el programa se cierra
     map[ballPos_row][ballPos_column] = ' ';
     ballPos_row += ballVel_row;
     ballPos_column += ballVel_column;
-    ballVelocityChange(); //si cambio la velocidad aquí el programa se detiene
+    ballVelocityChange();
 
     //frame timer
-    std::this_thread::sleep_for(0.05s); //como le pongo el tiempo como variable
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
 }
 
 
