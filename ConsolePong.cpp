@@ -1,7 +1,9 @@
-//FALTA RESOLVER PROBLEMA DE SINCRONICIDAD DE HILOS DE EJECUCIÓN
+//REVISAR QUE NO EXISTAN CONFLICTOS ENTRE MOVIMIENTO DE PADDLE CON LA PELOTA CUANDO SE MUEVA PADDLE Y LA PELOTA LO CHOQUE SIMULTANEAMENTE
+//problema con el paddle derecho en el contacto con esquinas
 #include <iostream>
 #include <thread>
 #include <conio.h>
+#include <mutex>
 
 const int PADDLE1_LENGTH = 5;
 const int PADDLE2_LENGTH = 5;
@@ -14,8 +16,8 @@ int Paddle1BottomPos = PADDLE1_INIT_POSITION_BOTTOM;
 int Paddle2TopPos = PADDLE2_INIT_POSITION_TOP;
 int Paddle2BottomPos = PADDLE2_INIT_POSITION_BOTTOM;
 
-const int BALL_INIT_POSITION_ROW = 3;
-const int BALL_INIT_POSITION_COLUMN = 3;
+const int BALL_INIT_POSITION_ROW = 5;
+const int BALL_INIT_POSITION_COLUMN = 5;
 int ballPos_row = BALL_INIT_POSITION_ROW; 
 int ballPos_column = BALL_INIT_POSITION_COLUMN;
 
@@ -30,11 +32,13 @@ char map[MAP_HEIGHT][MAP_WIDTH];
 int i = 0;
 int j = 0;
 
+// std::mutex paddlesMutex;
+// std::mutex ballMutex;
 
 /*
-Función que controla el movimiento del paddle 1
+Función que controla el movimiento de los paddles
 */
-void paddle1Move() {
+void paddlesMove() {
     bool inGame = true;
     char moveKey;
     
@@ -43,10 +47,17 @@ void paddle1Move() {
         map[i][1] = '[';
         map[i][2] = ']';
     }
+    //dibuja paddle2 en su posición inicial antes de que se introdezca algún caracter
+    for(int i = Paddle2TopPos; i <= Paddle2BottomPos; i++) {
+        map[i][MAP_WIDTH - 3] = '[';
+        map[i][MAP_WIDTH - 2] = ']';
+    }
     
 
     while(inGame) {
         moveKey = getch();
+
+        //std::lock_guard<std::mutex> lock(paddlesMutex);
 
         if(moveKey == 's') { //movimiento hacia abajo
             if(Paddle1BottomPos == MAP_HEIGHT - 2) {
@@ -60,8 +71,7 @@ void paddle1Move() {
             map[Paddle1TopPos][2] = ' ';
             Paddle1TopPos += 1;
             Paddle1BottomPos = Paddle1TopPos + (PADDLE1_LENGTH - 1);
-        }
-        if(moveKey == 'w') { //movimiento hacia arriba
+        } else if(moveKey == 'w') { //movimiento hacia arriba
             if(Paddle1TopPos == 1) {
                 for(int i = Paddle1TopPos; i <= Paddle1BottomPos; i++) {
                     map[i][1] = '[';
@@ -73,35 +83,7 @@ void paddle1Move() {
             map[Paddle1BottomPos][2] = ' ';
             Paddle1TopPos -= 1;
             Paddle1BottomPos = Paddle1TopPos + (PADDLE1_LENGTH - 1);
-        }
-
-        for(int i = Paddle1TopPos; i <= Paddle1BottomPos; i++) {
-            map[i][1] = '[';
-            map[i][2] = ']';
-        }
-
-    }
-
-}
-
-/*
-Función que controla el movimiento del paddle 2
-*/
-void paddle2Move() {
-    bool inGame = true;
-    char moveKey;
-    
-    //dibuja paddle1 en su posición inicial antes de que se introdezca algún caracter
-    for(int i = Paddle2TopPos; i <= Paddle2BottomPos; i++) {
-        map[i][MAP_WIDTH - 3] = '[';
-        map[i][MAP_WIDTH - 2] = ']';
-    }
-    
-
-    while(inGame) {
-        moveKey = getch();
-
-        if(moveKey == 'j') { //movimiento hacia abajo
+        } else if(moveKey == 'j') { //movimiento hacia abajo
             if(Paddle2BottomPos == MAP_HEIGHT - 2) {
                 for(int i = Paddle2TopPos; i <= Paddle2BottomPos; i++) {
                     map[i][MAP_WIDTH - 3] = '[';
@@ -113,8 +95,7 @@ void paddle2Move() {
             map[Paddle2TopPos][MAP_WIDTH - 2] = ' ';
             Paddle2TopPos += 1;
             Paddle2BottomPos = Paddle2TopPos + (PADDLE2_LENGTH - 1);
-        }
-        if(moveKey == 'k') { //movimiento hacia arriba
+        } else if(moveKey == 'k') { //movimiento hacia arriba
             if(Paddle2TopPos == 1) {
                 for(int i = Paddle2TopPos; i <= Paddle2BottomPos; i++) {
                     map[i][MAP_WIDTH - 3] = '[';
@@ -128,6 +109,10 @@ void paddle2Move() {
             Paddle2BottomPos = Paddle2TopPos + (PADDLE2_LENGTH - 1);
         }
 
+        for(int i = Paddle1TopPos; i <= Paddle1BottomPos; i++) {
+            map[i][1] = '[';
+            map[i][2] = ']';
+        }
         for(int i = Paddle2TopPos; i <= Paddle2BottomPos; i++) {
             map[i][MAP_WIDTH - 3] = '[';
             map[i][MAP_WIDTH - 2] = ']';
@@ -141,61 +126,63 @@ void paddle2Move() {
 Cambia la velocidad de la pelota cuando se requiere
 */
 void ballVelocityChange() { //faltaba cuando la pelota se acercaba a los paddles por las esquinas
-    //paddle1
+    //PADDLE1
     //contacto con el paddle1 cara interior
     if( (ballPos_column == 3) && (map[ballPos_row][2] == ']') ) {
         ballVel_column = -ballVel_column;
-    }
-    if( (ballPos_column == 1) && ( (map[ballPos_row + 1][1] == '[') || (map[ballPos_row - 1][1] == '[') ) ) {
-            ballVel_row = -ballVel_row;
-    }
-    if( (ballPos_column == 2) && ( (map[ballPos_row + 1][2] == ']') || (map[ballPos_row - 1][2] == ']') ) ) {
-            ballVel_row = -ballVel_row;
+    } else if( (ballPos_column == 1) && ( (map[ballPos_row + 1][1] == '[') || (map[ballPos_row - 1][1] == '[') ) ) {
+        ballVel_row = -ballVel_row;
+    } else if( (ballPos_column == 2) && ( (map[ballPos_row + 1][2] == ']') || (map[ballPos_row - 1][2] == ']') ) ) {
+        ballVel_row = -ballVel_row;
     }
     //contacto por las esquinas de los paddles funciona salvo por caso especial
+    //else ?
     if( (ballVel_row < 0) && (ballVel_column < 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == 3) ) {
         ballVel_column = -ballVel_column;
         ballVel_row = -ballVel_row;
     }
-    if( (ballVel_row > 0) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == 3) ) {
+    else if( (ballVel_row > 0) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == 3) ) {
         ballVel_column = -ballVel_column;
         ballVel_row = -ballVel_row;
     }
-    //caso especial: pelota llega a techo o piso y además se sitúa en esquina de paddel superior o inferior, respectivamente
-    if( (ballVel_row > 0) && (ballPos_row == MAP_HEIGHT - 2) && (ballVel_column < 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == 3) ) {
+    //caso especial 1: pelota llega a techo o piso y además se sitúa en esquina de paddel superior o inferior, respectivamente
+    else if( (ballVel_row > 0) && (ballPos_row == MAP_HEIGHT - 2) && (ballVel_column < 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == 3) ) {
         ballVel_column = -ballVel_column; //no se invierte velocidad en filas ya que eso lo hará el contacto con el piso
     }
-    if( (ballVel_row < 0) && (ballPos_row == 1) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == 3) ) {
+    else if( (ballVel_row < 0) && (ballPos_row == 1) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == 3) ) {
         ballVel_column = -ballVel_column; //no se invierte velocidad en filas ya que eso lo hará el contacto con el techo 
     }
+    //caso especial 2: pelota viene en una dirección, movemos el paddle hacia la pelota y en ese frame coinciden pelota y paddle
+    // if( (ballVel_row < 0) && () )
 
-    //paddle2
+    //PADDLE2
     //contacto con el paddle2 cara interior
     if( (ballPos_column == (MAP_WIDTH - 4)) && (map[ballPos_row][MAP_WIDTH - 3] == '[') ) {
         ballVel_column = -ballVel_column;
-    }
-    if( (ballPos_column == (MAP_WIDTH - 3)) && ( (map[ballPos_row + 1][MAP_WIDTH - 3] == '[') || (map[ballPos_row - 1][MAP_WIDTH - 3] == '[') ) ) {
-            ballVel_row = -ballVel_row;
-    }
-    if( (ballPos_column == (MAP_WIDTH - 2)) && ( (map[ballPos_row + 1][MAP_WIDTH - 2] == ']') || (map[ballPos_row - 1][MAP_WIDTH - 2] == ']') ) ) {
-            ballVel_row = -ballVel_row;
+    } else if( (ballPos_column == (MAP_WIDTH - 3)) && ( (map[ballPos_row + 1][MAP_WIDTH - 3] == '[') || (map[ballPos_row - 1][MAP_WIDTH - 3] == '[') ) ) {
+        ballVel_row = -ballVel_row;
+    } else if( (ballPos_column == (MAP_WIDTH - 2)) && ( (map[ballPos_row + 1][MAP_WIDTH - 2] == ']') || (map[ballPos_row - 1][MAP_WIDTH - 2] == ']') ) ) {
+        ballVel_row = -ballVel_row;
     }
     //contacto por las esquinas de los paddles funciona salvo por caso especial
+    //else ?
     if( (ballVel_row < 0) && (ballVel_column > 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == MAP_WIDTH - 4) ) {
         ballVel_column = -ballVel_column;
         ballVel_row = -ballVel_row;
     }
-    if( (ballVel_row > 0) && (ballVel_column > 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == MAP_WIDTH - 4) ) {
+    else if( (ballVel_row > 0) && (ballVel_column > 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == MAP_WIDTH - 4) ) {
         ballVel_column = -ballVel_column;
         ballVel_row = -ballVel_row;
     }
-    //caso especial: pelota llega a techo o piso y además se sitúa en esquina de paddel superior o inferior, respectivamente
-    if( (ballVel_row > 0) && (ballPos_row == MAP_HEIGHT - 2) && (ballVel_column > 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == MAP_WIDTH - 4) ) {
+    //caso especial 1: pelota llega a techo o piso y además se sitúa en esquina de paddel superior o inferior, respectivamente
+    else if( (ballVel_row > 0) && (ballPos_row == MAP_HEIGHT - 2) && (ballVel_column > 0) && (ballPos_row - 1 == Paddle1BottomPos) && (ballPos_column == MAP_WIDTH - 4) ) {
         ballVel_column = -ballVel_column; //no se invierte velocidad en filas ya que eso lo hará el contacto con el piso
     }
-    if( (ballVel_row < 0) && (ballPos_row == 1) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == MAP_WIDTH - 4) ) {
+    else if( (ballVel_row < 0) && (ballPos_row == 1) && (ballVel_column < 0) && (ballPos_row + 1 == Paddle1TopPos) && (ballPos_column == MAP_WIDTH - 4) ) {
         ballVel_column = -ballVel_column; //no se invierte velocidad en filas ya que eso lo hará el contacto con el techo 
     }
+    //caso especial 2: 
+
 
     //contacto de pelota con paredes del mapa - Se calcula al final para no alterar la lógica del contacto con los paddles
     if((ballPos_column == 1) || ballPos_column == (MAP_WIDTH - 2)) {
@@ -208,22 +195,18 @@ void ballVelocityChange() { //faltaba cuando la pelota se acercaba a los paddles
 }
 
 /*
-Solo carga los bordes de mapa y dibuja a la pelota en su posición incial
+Asigna los bordes al mapa
 */
 void mapRender() {
     for(i = 0; i < MAP_HEIGHT; i++) {
-        std::cout << "\n";
         for(j = 0; j < MAP_WIDTH; j++) {      
             //boundaries assignation
             if(j == 0 || j == MAP_WIDTH - 1) {
                 map[i][j] = '|';
-                std::cout << map[i][j];
             } else if( (i == 0 && (j != 0 || i != MAP_WIDTH - 1)) || (i == MAP_HEIGHT - 1 && (j != 0 || i != MAP_WIDTH - 1)) ) {
                 map[i][j] = '-';
-                std::cout << map[i][j];
             } else {
                 map[i][j] = ' '; //space assignation
-                std::cout << map[i][j];
             }
         }
     }
@@ -233,7 +216,6 @@ void mapRender() {
 Dibuja todo el mapa dado por mapRender() y actualiza la posición de la pelota
 */
 void ballPosition() {
-
     i = 0;
     j = 0;
 
@@ -245,8 +227,8 @@ void ballPosition() {
             std::cout << map[i][j];
         }
     }
-
     map[ballPos_row][ballPos_column] = ' ';
+
     ballPos_row += ballVel_row;
     ballPos_column += ballVel_column;
     ballVelocityChange();
@@ -258,11 +240,10 @@ void ballPosition() {
 
 int main()
 {
+    system("cls");
     mapRender();
 
-    //puedo poner ambos paddles en una sola función pero intentaré solucionar el problema de sincronicidad entre los paddles para moverse
-    std::thread Paddle1Thread(paddle1Move);
-    std::thread Paddle2Thread(paddle2Move);
+    std::thread PaddlesThread(paddlesMove);
 
     while(1) {
         ballPosition();
