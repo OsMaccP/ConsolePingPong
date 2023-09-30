@@ -1,6 +1,3 @@
-//REVISAR QUE NO EXISTAN CONFLICTOS ENTRE MOVIMIENTO DE PADDLE CON LA PELOTA CUANDO SE MUEVA PADDLE Y LA PELOTA LO CHOQUE SIMULTANEAMENTE
-//problema con el paddle derecho en el contacto con esquinas
-//Al eliminar un branch no se elimina de git si todo estuvo y está up-to-date, si modifico el código y hago push se actualiza la brach eliminada? -> sería un bug que prdría resolver ya que git es de código abieto
 #include <iostream>
 #include <thread>
 #include <conio.h>
@@ -269,3 +266,4 @@ int main()
 
     return 0;
 }
+//Al eliminar un branch no se elimina de git si todo estuvo y está up-to-date, si modifico el código y hago push se actualiza la brach eliminada?
