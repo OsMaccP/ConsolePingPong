@@ -266,4 +266,3 @@ int main()
 
     return 0;
 }
-//Al eliminar un branch no se elimina de git si todo estuvo y está up-to-date, si modifico el código y hago push se actualiza la brach eliminada?
