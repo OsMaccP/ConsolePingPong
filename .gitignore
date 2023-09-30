@@ -2,4 +2,4 @@
 *.exe
 
 #ignore vscode folder
-vscode
+.vscode
