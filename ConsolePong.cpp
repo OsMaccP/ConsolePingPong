@@ -2,8 +2,8 @@
 #include <thread>
 #include <conio.h>
 
-const int PADDLE1_LENGTH = 3;
-const int PADDLE2_LENGTH = 3;
+const int PADDLE1_LENGTH = 5;
+const int PADDLE2_LENGTH = 5;
 const int PADDLE1_INIT_POSITION_TOP = 1;
 const int PADDLE1_INIT_POSITION_BOTTOM = PADDLE1_INIT_POSITION_TOP + (PADDLE1_LENGTH - 1);
 const int PADDLE2_INIT_POSITION_TOP = 1;
@@ -21,8 +21,8 @@ int ballPos_column = BALL_INIT_POSITION_COLUMN;
 int ballVel_row = 1;
 int ballVel_column = 1;    
 
-const int MAP_WIDTH = 20; //20 minimum frequency
-const int MAP_HEIGHT = 9; //9 minimum frequency
+const int MAP_WIDTH = 60; //20 minimum frequency
+const int MAP_HEIGHT = 15; //9 minimum frequency
 char map[MAP_HEIGHT][MAP_WIDTH];
 
 bool inGame = true;
@@ -237,7 +237,7 @@ void ballPosition() {
     ballVelocityChange();
 
     //frame timer
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
 }
 
 
